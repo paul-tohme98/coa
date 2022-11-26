@@ -1,0 +1,13 @@
+let
+    var ch := getchar()
+    var res := ord(ch)
+    function read_unsigned() : int=
+        if res>47 & res <58 then
+            res
+        else
+            -1
+    var a : int := read_unsigned()
+in
+    print_int(a*2);
+    print("\n")
+end
