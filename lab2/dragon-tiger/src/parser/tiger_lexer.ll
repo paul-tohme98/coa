@@ -24,6 +24,7 @@ static std::string string_buffer;
 lineterminator  \r|\n|\r\n
 blank           [ \t\f]
 id              [a-zA-Z][_0-9a-zA-Z]*
+int		[1-9][0-9]*|0
 
  /* Declare two start conditions (sub-automate states) to handle
     strings and comments */
@@ -86,6 +87,11 @@ var      return yy::tiger_parser::make_VAR(loc);
 
  /* Identifiers */
 {id}       return yy::tiger_parser::make_ID(Symbol(yytext), loc);
+
+ /* Integers */
+{int}	{if (strtol(yytext, NULL, 10) <= TIGER_INT_MAX) 
+		return yy::tiger_parser::make_INT(strtol(yytext, NULL, 10), loc);
+	else utils::error(loc, "int is bigger than the max");}
 
  /* Strings */
 \" {BEGIN(STRING); string_buffer.clear();}
