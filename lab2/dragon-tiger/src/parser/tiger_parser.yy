@@ -109,11 +109,12 @@ using utils::nl;
 %left LE;
 %left GT;
 %left GE;
+%left AND;
+%left OR;
 %left PLUS MINUS;
 %nonassoc FUNCTION VAR TYPE DO OF ASSIGN;
-%left UMINUS;
 %left TIMES DIVIDE;
-
+%left UMINUS;
 // Declare grammar rules and production actions
 
 %start program;
