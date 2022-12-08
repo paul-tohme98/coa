@@ -103,6 +103,12 @@ using utils::nl;
 %%
 
 // Declare precedence rules
+%left EQ;
+%left NEQ;
+%left LT;
+%left LE;
+%left GT;
+%left GE;
 %left PLUS;
 %left MINUS;
 %nonassoc FUNCTION VAR TYPE DO OF ASSIGN;
