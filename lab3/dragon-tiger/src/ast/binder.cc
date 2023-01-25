@@ -323,7 +323,20 @@ void Binder::visit(Break &b) {
 	b.set_loop(bcl_act);
 }
 
-void Binder::visit(Assign &assign) { 	
+void Binder::visit(Assign &assign) {
+  /* Initialisations */
+	optional<VarDecl &> var_decl = assign.get_lhs().get_decl();
+	
+	assign.get_lhs().accept(*this);
+	assign.get_rhs().accept(*this);
+	
+	if (var_decl)
+	{
+		
+		if (var_decl.value().read_only)
+			utils::error(assign.loc, "Error: Variable is not assignable...");
+		
+	}
 }
 
 } // namespace binder
