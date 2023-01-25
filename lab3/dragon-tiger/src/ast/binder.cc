@@ -301,6 +301,19 @@ void Binder::visit(WhileLoop &loop) {
 }
 
 void Binder::visit(ForLoop &loop) {
+  /* Initialisations */
+	Loop* bcl = bcl_act;
+	
+	loop.get_high().accept(*this);
+	push_scope();
+	loop.get_variable().accept(*this);
+	
+	bcl_act = &loop;
+
+	loop.get_body().accept(*this);
+    pop_scope();
+    
+    bcl_act = bcl;
 }
 
 void Binder::visit(Break &b) {
