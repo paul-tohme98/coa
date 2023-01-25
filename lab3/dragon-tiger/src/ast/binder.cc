@@ -288,12 +288,26 @@ void Binder::visit(FunCall &call) {
 }
 
 void Binder::visit(WhileLoop &loop) {
+  /* Initialisations */
+	Loop* bcl = bcl_act;
+	
+	loop.get_condition().accept(*this);
+	
+	bcl_act = &loop;
+	
+	loop.get_body().accept(*this);
+	
+	bcl_act = bcl;
 }
 
 void Binder::visit(ForLoop &loop) {
 }
 
 void Binder::visit(Break &b) {
+  if (! bcl_act)
+		utils::error(b.loc, "Error: break must be inside the loop...");
+		
+	b.set_loop(bcl_act);
 }
 
 void Binder::visit(Assign &assign) { 	
