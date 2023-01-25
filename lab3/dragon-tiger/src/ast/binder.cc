@@ -125,6 +125,8 @@ void Binder::visit(StringLiteral &literal) {
 }
 
 void Binder::visit(BinaryOperator &op) {		
+  op.get_left().accept(*this);
+  op.get_right().accept(*this);
 }
 
 void Binder::visit(Sequence &seq) {
@@ -209,6 +211,9 @@ void Binder::visit(Identifier &id) {
 }
 
 void Binder::visit(IfThenElse &ite) {    	
+  ite.get_condition().accept(*this); 
+  ite.get_then_part().accept(*this);  
+  ite.get_else_part().accept(*this);
 }
 
 void Binder::visit(VarDecl &decl) {
@@ -261,6 +266,25 @@ void Binder::visit(FunDecl &decl) {
 }
 
 void Binder::visit(FunCall &call) {
+  /* Initialisation */
+	FunDecl *fun_decl = dynamic_cast<FunDecl*>(&find(call.loc, call.func_name));
+	std::vector<Expr *> &expr_args = call.get_args();
+	
+    if (!fun_decl)
+    {
+		
+		utils::error(call.loc, "Error: Declaration isn't found...");
+	
+	}else 
+	{
+		
+		call.set_depth(functions.size());
+		call.set_decl(fun_decl);
+
+		for (Expr* expr : expr_args)
+			expr->accept(*this);
+			
+	}
 }
 
 void Binder::visit(WhileLoop &loop) {
