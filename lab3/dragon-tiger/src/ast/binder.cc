@@ -124,29 +124,140 @@ void Binder::visit(IntegerLiteral &literal) {
 void Binder::visit(StringLiteral &literal) {
 }
 
-void Binder::visit(BinaryOperator &op) {
+void Binder::visit(BinaryOperator &op) {		
 }
 
 void Binder::visit(Sequence &seq) {
+	size_t i = 0;
+	
+	std::vector<Expr *> exprs = seq.get_exprs();
+
+	for(i = 0; i < exprs.size(); i++)
+		exprs[i]->accept(*this);
+
 }
 
 void Binder::visit(Let &let) {
+	push_scope();
+	
+	std::vector<Decl*> &decls = let.get_decls();
+	Sequence &seq = let.get_sequence();
+	
+	Loop* bcl = bcl_act;
+	bcl_act = nullptr;
+	
+	auto it = decls.begin();
+	
+	while (it != decls.end())
+	{
+		
+		FunDecl* decl = dynamic_cast<FunDecl*>(*it);
+		std::vector<FunDecl*> fun_decls;
+		
+		if (!decl)
+		{
+			
+			(*it)->accept(*this);
+			it++;
+			
+			continue;
+			
+		}
+		
+		while (decl)
+		{
+			enter(*decl);
+		    fun_decls.push_back(decl);
+		    it++;
+		    
+		    if (it == decls.end())
+				break;
+		
+			decl = dynamic_cast<FunDecl*>(*it);
+        }
+        
+        for (size_t i = 0; i < fun_decls.size(); i++)
+			fun_decls[i]->accept(*this);
+			
+	}
+			
+	bcl_act = bcl;
+	seq.accept(*this);
+		
+	pop_scope();
+		
 }
 
 void Binder::visit(Identifier &id) {
+	/* Initialisation */
+	VarDecl* var_decl = dynamic_cast<VarDecl*>(&find(id.loc, id.name));
+	
+	if(!var_decl)
+	{
+		utils::error(id.loc, "Error: illegal case....");
+	}
+	
+	else 
+	{
+		id.set_decl(var_decl);
+		id.set_depth(functions.size());
+		
+		if(var_decl->get_depth() < id.get_depth())
+			var_decl->set_escapes();
+	}
+	
 }
 
-void Binder::visit(IfThenElse &ite) {
+void Binder::visit(IfThenElse &ite) {    	
 }
 
 void Binder::visit(VarDecl &decl) {
+	
+	/* Initialisations */
+	optional<Expr &> exprs = decl.get_expr();
+	
+	decl.set_depth(functions.size());
+	
+	if(exprs)
+		exprs.value().accept(*this);
+		
+	enter(decl);
+	
 }
 
-void Binder::visit(FunDecl &decl) {
-  set_parent_and_external_name(decl);
-  functions.push_back(&decl);
-  /* ... put your code here ... */
-  functions.pop_back();
+void Binder::visit(FunDecl &decl) {  
+	
+	/* Initialisations */
+	size_t i = 0;
+	std::vector<VarDecl*> params = decl.get_params();
+	optional<Expr &> exprs = decl.get_expr();
+	std::vector<VarDecl*> escp_decls = decl.get_escaping_decls();
+	
+	set_parent_and_external_name(decl);
+    functions.push_back(&decl);
+    
+    /* ... put your code here ... */
+    decl.set_depth(functions.size()-1);
+
+    push_scope(); 
+    
+    for(i = 0; i < params.size(); i++)
+		params[i]->accept(*this);
+
+    if (exprs)
+	{
+		exprs.value().accept(*this);
+	}else
+	{
+		utils::error(decl.loc, "Error: function isn't defined...");
+	}
+	
+	for (i = 0; i < escp_decls.size(); i++)
+		escp_decls[i]->accept(*this);
+		
+    pop_scope(); 
+    
+    functions.pop_back();
 }
 
 void Binder::visit(FunCall &call) {
@@ -161,7 +272,7 @@ void Binder::visit(ForLoop &loop) {
 void Binder::visit(Break &b) {
 }
 
-void Binder::visit(Assign &assign) {
+void Binder::visit(Assign &assign) { 	
 }
 
 } // namespace binder
