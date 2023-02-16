@@ -212,16 +212,17 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
       llvm::BasicBlock::Create(Context, "loop_end", current_function);
 
   Builder.CreateBr(test_block);
+
   Builder.SetInsertPoint(test_block);
 
-  // Convert the condition to a boolean value
   llvm::Value* const condition = loop.get_condition().accept(*this);
 
   // Branch to either the then or else block depending on the condition
-  Builder.CreateCondBr(condition, body_block, end_block);
+  Builder.CreateCondBr(Builder.CreateIsNotNull(condition), body_block, end_block);
 
   Builder.SetInsertPoint(body_block);
   loop.get_body().accept(*this);
+
   Builder.CreateBr(test_block);
 
   Builder.SetInsertPoint(end_block);
