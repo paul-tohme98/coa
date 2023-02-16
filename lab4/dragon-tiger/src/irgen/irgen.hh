@@ -1,5 +1,5 @@
 #ifndef IRGEN_HH
-#define IRGEN_HH
+#define IRGEN_HH 
 
 #include <deque>
 #include <ostream>
