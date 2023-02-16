@@ -25,7 +25,8 @@ llvm::Type *IRGenerator::llvm_type(const ast::Type ast_type) {
   }
 }
 
-llvm::Value *IRGenerator::alloca_in_entry(llvm::Type *Ty, const std::string &name) {
+llvm::Value *IRGenerator::alloca_in_entry(llvm::Type *Ty,
+                                          const std::string &name) {
   llvm::IRBuilderBase::InsertPoint const saved = Builder.saveIP();
   Builder.SetInsertPoint(&current_function->getEntryBlock());
   llvm::Value *const value = Builder.CreateAlloca(Ty, nullptr, name);
