@@ -106,10 +106,10 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 
   // Convert the condition to a boolean value
   llvm::Value* const condition = ite.get_condition().accept(*this);
-  llvm::Value* const condition_bool = Builder.CreateICmpNE(condition, llvm::Constant::getNullValue(condition->getType()));
+  //llvm::Value* const condition_bool = Builder.CreateICmpNE(condition, llvm::Constant::getNullValue(condition->getType()));
 
   // Branch to either the then or else block depending on the condition
-  Builder.CreateCondBr(condition_bool, then_block, else_block);
+  Builder.CreateCondBr(condition, then_block, else_block);
 
   // Populate the then block
   Builder.SetInsertPoint(then_block);
@@ -259,7 +259,12 @@ llvm::Value *IRGenerator::visit(const ForLoop &loop) {
 }
 
 llvm::Value *IRGenerator::visit(const Assign &assign) {
-  UNIMPLEMENTED();
+  // UNIMPLEMENTED();
+  //llvm::Value* const lhs = assign.get_lhs().accept(*this);
+  //llvm::Value* const rhs = assign.get_rhs().accept(*this);
+  llvm::Value* const lhs = alloca_in_entry(llvm_type(assign.get_type()), "lhs");
+  
+  return nullptr;
 }
 
 } // namespace irgen
