@@ -199,17 +199,46 @@ llvm::Value *IRGenerator::visit(const FunCall &call) {
   return Builder.CreateCall(callee, args_values, "call");
 }
 
+// While loop
 llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
-  UNIMPLEMENTED();
+  // UNIMPLEMENTED();
+  llvm::BasicBlock *const test_block =
+      llvm::BasicBlock::Create(Context, "loop_test", current_function);
+
+  llvm::BasicBlock *const body_block =
+      llvm::BasicBlock::Create(Context, "loop_body", current_function);
+
+  llvm::BasicBlock *const end_block =
+      llvm::BasicBlock::Create(Context, "loop_end", current_function);
+
+  Builder.CreateBr(test_block);
+  Builder.SetInsertPoint(test_block);
+
+  // Convert the condition to a boolean value
+  llvm::Value* const condition = loop.get_condition().accept(*this);
+
+  // Branch to either the then or else block depending on the condition
+  Builder.CreateCondBr(condition, body_block, end_block);
+
+  Builder.SetInsertPoint(body_block);
+  loop.get_body().accept(*this);
+  Builder.CreateBr(test_block);
+
+  Builder.SetInsertPoint(end_block);
+  return nullptr;
 }
 
+// For loop
 llvm::Value *IRGenerator::visit(const ForLoop &loop) {
   llvm::BasicBlock *const test_block =
       llvm::BasicBlock::Create(Context, "loop_test", current_function);
+
   llvm::BasicBlock *const body_block =
       llvm::BasicBlock::Create(Context, "loop_body", current_function);
+
   llvm::BasicBlock *const end_block =
       llvm::BasicBlock::Create(Context, "loop_end", current_function);
+
   llvm::Value *const index = loop.get_variable().accept(*this);
   llvm::Value *const high = loop.get_high().accept(*this);
   Builder.CreateBr(test_block);
