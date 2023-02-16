@@ -96,24 +96,33 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
 
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
-  llvm::Value *result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
+  // Generate the condition
+  llvm::Value *const result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
-  llvm::BasicBlock *then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
-  llvm::BasicBlock *else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
-  llvm::BasicBlock *end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
+  // Create the if-then-else test block
+  llvm::BasicBlock *const test_block = llvm::BasicBlock::Create(Context, "test_block", current_function);  
+  // Create the if-then-else basic blocks
+  llvm::BasicBlock *const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
+  llvm::BasicBlock *const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
+  llvm::BasicBlock *const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
 
-  Builder.CreateCondBr(result, then_block, else_block);
+  // Create the branch instruction for the if-then-else blocks
+  Builder.SetInsertPoint(test_block);
+  Builder.CreateCondBr(Builder.CreateIsNotNull(ite.get_condition().accept(*this)), then_block, else_block);
 
+  // Populate the then block
   Builder.SetInsertPoint(then_block);
-  llvm::Value *then_result = ite.get_then_part().accept(*this);
+  llvm::Value *const then_result = ite.get_then_part().accept(*this);
   Builder.CreateStore(then_result, result);
   Builder.CreateBr(end_block);
 
+  // Populate the else block
   Builder.SetInsertPoint(else_block);
-  llvm::Value *else_result = ite.get_else_part().accept(*this);
+  llvm::Value *const else_result = ite.get_else_part().accept(*this);
   Builder.CreateStore(else_result, result);
   Builder.CreateBr(end_block);
 
+  // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
   return Builder.CreateLoad(result);
 }
