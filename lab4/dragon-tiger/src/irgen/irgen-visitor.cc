@@ -96,38 +96,49 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
 
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
-  // We create an allocation in the function entry block to store the if result
-  llvm::Value *const result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
+  // Allocate memory for the result of the if-then-else statement
+  llvm::Value* const result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
   // Create the if-then-else test block
-  //llvm::BasicBlock *const test_block = llvm::BasicBlock::Create(Context, "test_block", current_function);  
-  
-  // Create the if-then-else basic blocks
-  llvm::BasicBlock *const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
-  llvm::BasicBlock *const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
-  llvm::BasicBlock *const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
+  llvm::BasicBlock* const test_block = llvm::BasicBlock::Create(Context, "test_block", current_function);
 
-  // We branch depending on the condition
-  Builder.CreateCondBr(Builder.CreateIsNotNull(ite.get_condition().accept(*this)),
-    then_block,
-    else_block
-  );
+  // Create the if-then-else basic blocks
+  llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
+  llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
+  llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
+
+  // Convert the condition to a boolean value
+  llvm::Value* const condition = ite.get_condition().accept(*this);
+  llvm::Value* const condition_bool = Builder.CreateICmpNE(condition, llvm::Constant::getNullValue(condition->getType()));
+
+  // Branch to either the then or else block depending on the condition
+  Builder.CreateCondBr(condition_bool, then_block, else_block);
 
   // Populate the then block
   Builder.SetInsertPoint(then_block);
-  llvm::Value *const then_result = ite.get_then_part().accept(*this);
-  Builder.CreateStore(then_result, result);
+  llvm::Value* const then_result = ite.get_then_part().accept(*this);
+  llvm::Value* const then_result_cast = Builder.CreateBitCast(then_result, result->getType()->getPointerElementType());
+  Builder.CreateStore(then_result_cast, result);
   Builder.CreateBr(end_block);
 
   // Populate the else block
   Builder.SetInsertPoint(else_block);
-  llvm::Value *const else_result = ite.get_else_part().accept(*this);
-  Builder.CreateStore(else_result, result);
+  llvm::Value* const else_result = ite.get_else_part().accept(*this);
+  llvm::Value* const else_result_cast = Builder.CreateBitCast(else_result, result->getType()->getPointerElementType());
+  Builder.CreateStore(else_result_cast, result);
   Builder.CreateBr(end_block);
 
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
-  return Builder.CreateLoad(result);
+  llvm::Value* const final_result = Builder.CreateLoad(result);
+
+  // Check for errors
+  if (final_result->getType() != llvm_type(ite.get_type())) {
+    //throw std::runtime_error("if-then-else statement result has incorrect type");
+    return nullptr;
+  }
+
+  return final_result;
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
