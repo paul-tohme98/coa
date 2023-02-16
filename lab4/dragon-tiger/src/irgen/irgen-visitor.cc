@@ -100,7 +100,7 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::Value* const result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
   // Create the if-then-else test block
-  llvm::BasicBlock* const test_block = llvm::BasicBlock::Create(Context, "test_block", current_function);
+  //llvm::BasicBlock* const test_block = llvm::BasicBlock::Create(Context, "test_block", current_function);
 
   // Create the if-then-else basic blocks
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
