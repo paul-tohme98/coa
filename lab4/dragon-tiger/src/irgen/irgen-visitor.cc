@@ -99,9 +99,6 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   // Allocate memory for the result of the if-then-else statement
   llvm::Value* const result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
-  // Create the if-then-else test block
-  //llvm::BasicBlock* const test_block = llvm::BasicBlock::Create(Context, "test_block", current_function);
-
   // Create the if-then-else basic blocks
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
@@ -145,7 +142,10 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
   std::vector<llvm::Type *> var_type;
   auto var_decl = decl.get_expr();
-  var_type.push_back(llvm_type(var_decl->get_type()));
+  if(llvm_type(var_decl->get_type()))
+    var_type.push_back(llvm_type(var_decl->get_type()));
+  
+  return nullptr;
 }
 
 llvm::Value *IRGenerator::visit(const FunDecl &decl) {
