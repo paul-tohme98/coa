@@ -114,15 +114,15 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   // Populate the then block
   Builder.SetInsertPoint(then_block);
   llvm::Value* const then_result = ite.get_then_part().accept(*this);
-  llvm::Value* const then_result_cast = Builder.CreateBitCast(then_result, result->getType()->getPointerElementType());
-  Builder.CreateStore(then_result_cast, result);
+  //llvm::Value* const then_result_cast = Builder.CreateBitCast(then_result, result->getType()->getPointerElementType());
+  Builder.CreateStore(then_result, result);
   Builder.CreateBr(end_block);
 
   // Populate the else block
   Builder.SetInsertPoint(else_block);
   llvm::Value* const else_result = ite.get_else_part().accept(*this);
-  llvm::Value* const else_result_cast = Builder.CreateBitCast(else_result, result->getType()->getPointerElementType());
-  Builder.CreateStore(else_result_cast, result);
+  //llvm::Value* const else_result_cast = Builder.CreateBitCast(else_result, result->getType()->getPointerElementType());
+  Builder.CreateStore(else_result, result);
   Builder.CreateBr(end_block);
 
   // Block joining then and else parts
