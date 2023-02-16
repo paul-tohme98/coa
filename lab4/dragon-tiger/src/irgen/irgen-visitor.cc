@@ -144,7 +144,9 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   auto var_decl = decl.get_expr();
   if(llvm_type(var_decl->get_type()))
     var_type.push_back(llvm_type(var_decl->get_type()));
-  
+  else{
+    var_type.push_back(llvm_type(t_void));
+  }
   return nullptr;
 }
 
