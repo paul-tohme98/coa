@@ -246,7 +246,7 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   loop.get_body().accept(*this);
 
   Builder.CreateBr(test_block);
-  Builder.SetInsertPoint(test_block);
+  //Builder.SetInsertPoint(test_block);
 
   Builder.SetInsertPoint(end_block);
   return nullptr;
