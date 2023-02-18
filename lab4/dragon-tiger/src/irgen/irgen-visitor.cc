@@ -151,10 +151,23 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
   std::vector<llvm::Type *> var_type;
   auto var_decl = decl.get_expr();
-  if(llvm_type(var_decl->get_type()))
+  /*if(decl.get_expr().is_initialized()){
+    return nullptr;
+  }*/
+
+  llvm::Value *alloc = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
+
+  if(llvm_type(decl.get_type())){
     var_type.push_back(llvm_type(var_decl->get_type()));
+    //Builder.CreateStore(val, alloc);
+  }
   else{
     var_type.push_back(llvm_type(t_undef));
+    //return nullptr;
+  }
+  if(decl.get_expr().has_value()){
+    
+    //Builder.CreateStore(val, alloc);
   }
   return nullptr;
 }
@@ -233,6 +246,7 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   loop.get_body().accept(*this);
 
   Builder.CreateBr(test_block);
+  Builder.SetInsertPoint(test_block);
 
   Builder.SetInsertPoint(end_block);
   return nullptr;
