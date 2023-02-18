@@ -92,13 +92,19 @@ llvm::Value *IRGenerator::visit(const Let &let) {
 
 llvm::Value *IRGenerator::visit(const Identifier &id) {
   UNIMPLEMENTED();
+  //llvm::Value *decl;
 }
 
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
+  
+  // Create an entry block
+  llvm::BasicBlock* const entry_block = llvm::BasicBlock::Create(Context, "entry", current_function);
+  Builder.SetInsertPoint(entry_block);
+  
   // Allocate memory for the result of the if-then-else statement
-  llvm::Value* const result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
-
+  llvm::Value *result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
+  
   // Create the if-then-else basic blocks
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
@@ -112,21 +118,21 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   Builder.CreateCondBr(condition, then_block, else_block);
 
   // Populate the then block
-  if(condition){
+  //if(condition){
     Builder.SetInsertPoint(then_block);
     llvm::Value* const then_result = ite.get_then_part().accept(*this);
     //llvm::Value* const then_result_cast = Builder.CreateBitCast(then_result, result->getType()->getPointerElementType());
     Builder.CreateStore(then_result, result);
     Builder.CreateBr(end_block);
-  }
-  if(!condition){
+  //}
+  //if(!condition){
     // Populate the else block
     Builder.SetInsertPoint(else_block);
     llvm::Value* const else_result = ite.get_else_part().accept(*this);
     //llvm::Value* const else_result_cast = Builder.CreateBitCast(else_result, result->getType()->getPointerElementType());
     Builder.CreateStore(else_result, result);
     Builder.CreateBr(end_block);
-  }
+  //}
 
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
@@ -148,7 +154,7 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   if(llvm_type(var_decl->get_type()))
     var_type.push_back(llvm_type(var_decl->get_type()));
   else{
-    var_type.push_back(llvm_type(t_void));
+    var_type.push_back(llvm_type(t_undef));
   }
   return nullptr;
 }
@@ -263,9 +269,11 @@ llvm::Value *IRGenerator::visit(const ForLoop &loop) {
 
 llvm::Value *IRGenerator::visit(const Assign &assign) {
   // UNIMPLEMENTED();
-  //llvm::Value* const lhs = assign.get_lhs().accept(*this);
-  //llvm::Value* const rhs = assign.get_rhs().accept(*this);
-  llvm::Value* const lhs = alloca_in_entry(llvm_type(assign.get_type()), "lhs");
+  llvm::BasicBlock *const entry_block = llvm::BasicBlock::Create(Context, "entry", current_function);
+  Builder.SetInsertPoint(entry_block);
+  llvm::Value* const lhs = assign.get_lhs().accept(*this);
+  llvm::Value* const rhs = assign.get_rhs().accept(*this);
+  //llvm::Value* const lhs = alloca_in_entry(llvm_type(assign.get_type()), "lhs");
   
   return nullptr;
 }
