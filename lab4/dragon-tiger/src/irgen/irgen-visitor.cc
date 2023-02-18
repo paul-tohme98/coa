@@ -148,12 +148,12 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
-  //UNIMPLEMENTED();
-  std::vector<llvm::Type *> var_type;
+  UNIMPLEMENTED();
+  /*std::vector<llvm::Type *> var_type;
   auto var_decl = decl.get_expr();
-  /*if(decl.get_expr().is_initialized()){
-    return nullptr;
-  }*/
+  //if(decl.get_expr().is_initialized()){
+  //  return nullptr;
+  //}
 
   llvm::Value *alloc = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
 
@@ -169,7 +169,7 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
     
     //Builder.CreateStore(val, alloc);
   }
-  return nullptr;
+  return nullptr;*/
 }
 
 llvm::Value *IRGenerator::visit(const FunDecl &decl) {
