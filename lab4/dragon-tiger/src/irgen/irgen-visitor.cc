@@ -171,7 +171,7 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
 
   auto var_decl = decl.get_expr();
   
-  if(!decl.get_expr()){
+  if(!var_decl){
     return nullptr;
   }
 
@@ -179,14 +179,12 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   llvm::Value *val;
   val = var_decl.get().accept(*this);
 
-  if((decl.get_type() != t_void) || (!val)){
-      // Check if the expression has a void type, if it does return nullptr
-      if ((decl.get_expr()->get_type() == t_void) || (!val)) {
+  if(decl.get_type() != t_void){
+      if (decl.get_expr()->get_type() == t_void) {
         return nullptr;
       }  
       Builder.CreateStore(val, variable);
-      allocations[&decl] = variable;
-    
+      allocations[&decl] = variable;  
   }
   return variable;
 }
