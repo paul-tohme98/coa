@@ -98,10 +98,6 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
   
-  // Create an entry block
-  llvm::BasicBlock* const entry_block = llvm::BasicBlock::Create(Context, "entry", current_function);
-  Builder.SetInsertPoint(entry_block);
-  
   // Allocate memory for the result of the if-then-else statement
   llvm::Value *result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
   
@@ -109,66 +105,73 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
   llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
-
+  
+  if(ite.get_condition().get_type() == t_void){
+      return nullptr;
+    }
   // Convert the condition to a boolean value
-  llvm::Value* const condition = ite.get_condition().accept(*this);
-  //llvm::Value* const condition_bool = Builder.CreateICmpNE(condition, llvm::Constant::getNullValue(condition->getType()));
+  llvm::Value *const condition = ite.get_condition().accept(*this);
+  llvm::Value *const zero = Builder.getInt32(0);
+  llvm::Value *const condition_bool = Builder.CreateICmpNE(condition, zero, "comparison");
+  //llvm::Value *const condition_bool = Builder.CreateIntCast(cmp_to_zero, Type::t_int, false, "bool_value");
 
   // Branch to either the then or else block depending on the condition
-  Builder.CreateCondBr(condition, then_block, else_block);
-
+  Builder.CreateCondBr(Builder.CreateIsNotNull(condition_bool), then_block, else_block);
+  
   // Populate the then block
-  //if(condition){
-    Builder.SetInsertPoint(then_block);
-    llvm::Value* const then_result = ite.get_then_part().accept(*this);
-    //llvm::Value* const then_result_cast = Builder.CreateBitCast(then_result, result->getType()->getPointerElementType());
-    Builder.CreateStore(then_result, result);
-    Builder.CreateBr(end_block);
-  //}
-  //if(!condition){
-    // Populate the else block
-    Builder.SetInsertPoint(else_block);
-    llvm::Value* const else_result = ite.get_else_part().accept(*this);
-    //llvm::Value* const else_result_cast = Builder.CreateBitCast(else_result, result->getType()->getPointerElementType());
-    Builder.CreateStore(else_result, result);
-    Builder.CreateBr(end_block);
-  //}
+  Builder.SetInsertPoint(then_block);
+  llvm::Value* const then_result = ite.get_then_part().accept(*this);
+  Builder.CreateStore(then_result, result);
+  Builder.CreateBr(end_block);
+  
+  // Populate the else block
+  Builder.SetInsertPoint(else_block);
+  llvm::Value* const else_result = ite.get_else_part().accept(*this);
+  Builder.CreateStore(else_result, result);
+  Builder.CreateBr(end_block);
 
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
-  llvm::Value* const final_result = Builder.CreateLoad(result);
-
   // Check for errors
-  if (final_result->getType() != llvm_type(ite.get_type())) {
-    //throw std::runtime_error("if-then-else statement result has incorrect type");
+  if (result->getType() != llvm_type(ite.get_type())) {
     return nullptr;
   }
-
-  return final_result;
+  return Builder.CreateLoad(result);
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
-  std::vector<llvm::Type *> var_type;
-  auto var_decl = decl.get_expr();
-  //if(decl.get_expr().is_initialized()){
-  //  return nullptr;
-  //}
 
-  llvm::Value *alloc = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
+  //std::vector<llvm::Type *> var_type;
+  //auto var_decl = decl.get_expr();
+  
+  if(!decl.get_expr().is_initialized()){
+    return nullptr;
+  }
 
-  if(llvm_type(decl.get_type())){
+  llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
+  llvm::Value *val = decl.get_expr().get().accept(*this);
+  Builder.CreateStore(val, variable);
+  //llvm::Value *val = decl.accept(*this);
+  //std::cout<<"valeur = "<<val<<std::endl;
+
+  /*if(llvm_type(decl.get_type())){
     var_type.push_back(llvm_type(var_decl->get_type()));
-    //Builder.CreateStore(val, alloc);
+    if(decl.get_expr().has_value()){
+      //If it has a value, store it in the right memory
+      //val = decl.accept(*this);
+      //Builder.CreateStore(val, alloc);
+      //allocations.insert(var_decl, val);
+    }
   }
   else{
     var_type.push_back(llvm_type(t_undef));
     //return nullptr;
-  }
-  if(decl.get_expr().has_value()){
-    
-    //Builder.CreateStore(val, alloc);
-  }
+  }*/
+  //llvm::Value *val = decl.accept(*this);
+  //    Builder.CreateStore(val, alloc);
+  //getAllocations().insert(var_decl, val);
+  //Builder.CreateRet(0);
   return nullptr;
 }
 

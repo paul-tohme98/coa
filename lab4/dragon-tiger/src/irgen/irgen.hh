@@ -1,6 +1,7 @@
 #ifndef IRGEN_HH
 #define IRGEN_HH
 
+#include<map>
 #include <deque>
 #include <ostream>
 
@@ -33,11 +34,9 @@ class IRGenerator : public ConstASTValueVisitor {
   // function frame if they are escaping, or to
   // alloca-declared variables if they are not escaping.
   std::map<const VarDecl *, llvm::Value *> allocations;
-
   // Map loops to their exit blocks, so that early exits can
   // be easily processed.
   std::map<const Loop *, llvm::BasicBlock *> loop_exit_bbs;
-
   // List of functions to be processed after the current one.
   // This is necessary because in Tiger we might encounter
   // new function definitions while processing a function
@@ -83,7 +82,9 @@ public:
 
   // Print the generated IR.
   void print_ir(std::ostream *);
-
+  /*std::map<const VarDecl *, llvm::Value *> getAllocations(){
+    return allocations;
+  }*/
   // Generate the IR corresponding to those AST nodes.
   // Those methods will return either nullptr when no
   // result is expected (a statement for example),
