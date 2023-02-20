@@ -233,8 +233,8 @@ llvm::Value *IRGenerator::visit(const FunCall &call) {
 
 // While loop
 llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
-  UNIMPLEMENTED();
-  /*llvm::BasicBlock *const test_block =
+  // UNIMPLEMENTED();
+  llvm::BasicBlock *const test_block =
       llvm::BasicBlock::Create(Context, "loop_test", current_function);
 
   llvm::BasicBlock *const body_block =
@@ -256,10 +256,9 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   loop.get_body().accept(*this);
 
   Builder.CreateBr(test_block);
-  //Builder.SetInsertPoint(test_block);
 
   Builder.SetInsertPoint(end_block);
-  return nullptr;*/
+  return nullptr;
 }
 
 // For loop
