@@ -180,9 +180,6 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   val = var_decl.get().accept(*this);
 
   if(decl.get_type() != t_void){
-      if (decl.get_expr()->get_type() == t_void) {
-        return nullptr;
-      }  
       Builder.CreateStore(val, variable);
       allocations[&decl] = variable;  
   }
