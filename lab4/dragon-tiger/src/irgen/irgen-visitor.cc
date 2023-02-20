@@ -169,36 +169,9 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
 
-
-bool condition = decl.get_expr()->get_type() == t_void;
-  llvm::Value *exprVal;
-
-  if(decl.get_expr()) {
-
-    exprVal = decl.get_expr()->accept(*this);
-
-  }
- // Check if the expression has a void type, if it does return nullptr
-  if (condition || !exprVal) {
-    return nullptr;
-  }
-
-  // Allocate memory for the variable (only if the variable isn't a void type)
-  llvm::Type* var_type = llvm_type(decl.get_type());
-  llvm::Value* var_alloca = alloca_in_entry(var_type, decl.name);
-
-  // Generate code for the expression and store the result in the allocated memory
-  allocations[&decl] = var_alloca;
-  Builder.CreateStore(exprVal, var_alloca);
-  
-  // Return the allocated memory
-  return var_alloca;  
-
-  /*
-  std::vector<llvm::Type *> var_type;
   auto var_decl = decl.get_expr();
   
-  if(!decl.get_expr().is_initialized()){
+  if(!decl.get_expr()){
     return nullptr;
   }
 
@@ -206,7 +179,6 @@ bool condition = decl.get_expr()->get_type() == t_void;
   llvm::Value *val;
 
   if(llvm_type(decl.get_type())){
-    var_type.push_back(llvm_type(var_decl->get_type()));
     if(var_decl.has_value()){
       //If it has a value, store it in the right memory
       val = var_decl.get().accept(*this);
@@ -218,10 +190,7 @@ bool condition = decl.get_expr()->get_type() == t_void;
       allocations[&decl] = variable;
     }
   }
-  else{
-    var_type.push_back(llvm_type(t_undef));
-  }
-  return nullptr;*/
+  return nullptr;
 }
 
 llvm::Value *IRGenerator::visit(const FunDecl &decl) {
