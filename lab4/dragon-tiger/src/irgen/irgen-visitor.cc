@@ -118,11 +118,14 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::Value *const condition = ite.get_condition().accept(*this);
   llvm::Value *const zero = Builder.getInt32(0);
   llvm::Value *const condition_bool = Builder.CreateICmpNE(condition, zero, "comparison");
-  //llvm::Value *const condition_bool = Builder.CreateIntCast(cmp_to_zero, Type::t_int, false, "bool_value");
 
   // Branch to either the then or else block depending on the condition
-  Builder.CreateCondBr(condition_bool, then_block, else_block);
-  
+  //Builder.CreateCondBr(condition_bool, then_block, else_block);
+  Builder.CreateCondBr(
+    Builder.CreateIsNotNull(ite.get_condition().accept(*this)),
+    then_block,
+    else_block
+  );
   // Populate the then block
   Builder.SetInsertPoint(then_block);
   llvm::Value* const then_result = ite.get_then_part().accept(*this);
