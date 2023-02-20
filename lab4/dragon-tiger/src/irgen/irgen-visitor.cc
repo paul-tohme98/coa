@@ -110,7 +110,13 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
 
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
-  /*
+  if(ite.get_condition().get_type() == t_void){
+      return nullptr;
+  }
+  // Check for errors
+  if (!llvm_type(ite.get_type())) {
+    return nullptr;
+  }
   // Allocate memory for the result of the if-then-else statement
   llvm::Value *result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
   
@@ -119,22 +125,15 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
   llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
   
-  if(ite.get_condition().get_type() == t_void){
-      return nullptr;
-  }
-  // Check for errors
-  if (!llvm_type(ite.get_type())) {
-    return nullptr;
-  }
   // Convert the condition to a boolean value
   llvm::Value *const condition = ite.get_condition().accept(*this);
-  llvm::Value *const zero = Builder.getInt32(0);
-  llvm::Value *const condition_bool = Builder.CreateICmpNE(condition, zero);
+  //llvm::Value *const zero = Builder.getInt64(0);
+  //llvm::Value *const condition_bool = Builder.CreateICmpNE(condition, zero);
 
   // Branch to either the then or else block depending on the condition
   //Builder.CreateCondBr(condition_bool, then_block, else_block);
   Builder.CreateCondBr(
-    Builder.CreateIsNotNull(condition_bool),
+    Builder.CreateIsNotNull(condition),
     then_block,
     else_block
   );
@@ -152,7 +151,7 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
-  return Builder.CreateLoad(result);*/
+  return Builder.CreateLoad(result);
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
@@ -234,8 +233,8 @@ llvm::Value *IRGenerator::visit(const FunCall &call) {
 
 // While loop
 llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
-  // UNIMPLEMENTED();
-  llvm::BasicBlock *const test_block =
+  UNIMPLEMENTED();
+  /*llvm::BasicBlock *const test_block =
       llvm::BasicBlock::Create(Context, "loop_test", current_function);
 
   llvm::BasicBlock *const body_block =
@@ -260,7 +259,7 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   //Builder.SetInsertPoint(test_block);
 
   Builder.SetInsertPoint(end_block);
-  return nullptr;
+  return nullptr;*/
 }
 
 // For loop
