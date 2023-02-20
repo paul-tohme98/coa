@@ -1,8 +1,9 @@
 #include <cstdlib>  // For exit
 #include <iostream> // For std::cerr
 #include "irgen.hh"
-
 #include "llvm/Support/raw_ostream.h"
+
+
 
 namespace {
 
@@ -15,6 +16,7 @@ namespace {
 } // namespace
 
 namespace irgen {
+// llvm::llvm_set_option("", "-debug")
 
 llvm::Value *IRGenerator::visit(const IntegerLiteral &literal) {
   return Builder.getInt32(literal.value);
@@ -91,9 +93,19 @@ llvm::Value *IRGenerator::visit(const Let &let) {
 }
 
 llvm::Value *IRGenerator::visit(const Identifier &id) {
-  UNIMPLEMENTED();
-  //llvm::Value *variable = id.get_decl().get();
-  //llvm::Value *val = id.get_decl().get().accept(*this);
+  //UNIMPLEMENTED();
+  // loads value of the identifer allocated mem address
+  if(id.get_type() == t_void){
+    return nullptr;
+  }
+  llvm::Value *address = address_of(id);
+  // llvm::Type *int_type = Builder.getIntNTy(8 * sizeof(address));
+  // llvm::Value *int_val = Builder.CreatePtrToInt(address, int_type);
+  // llvm::Value *cmp = Builder.CreateICmpNE(int_val, Builder.getIntN(int_type->getIntegerBitWidth(), 0));
+  if(!address){
+    return nullptr;
+  }
+  return Builder.CreateLoad(address); 
 }
 
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
@@ -117,12 +129,12 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   // Convert the condition to a boolean value
   llvm::Value *const condition = ite.get_condition().accept(*this);
   llvm::Value *const zero = Builder.getInt32(0);
-  llvm::Value *const condition_bool = Builder.CreateICmpNE(condition, zero, "comparison");
+  llvm::Value *const condition_bool = Builder.CreateICmpNE(condition, zero);
 
   // Branch to either the then or else block depending on the condition
   //Builder.CreateCondBr(condition_bool, then_block, else_block);
   Builder.CreateCondBr(
-    Builder.CreateIsNotNull(ite.get_condition().accept(*this)),
+    Builder.CreateIsNotNull(condition_bool),
     then_block,
     else_block
   );
@@ -131,7 +143,7 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::Value* const then_result = ite.get_then_part().accept(*this);
   Builder.CreateStore(then_result, result);
   Builder.CreateBr(end_block);
-  
+
   // Populate the else block
   Builder.SetInsertPoint(else_block);
   llvm::Value* const else_result = ite.get_else_part().accept(*this);
@@ -162,7 +174,7 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
       //If it has a value, store it in the right memory
       val = var_decl.get().accept(*this);
       Builder.CreateStore(val, variable);
-      allocations[&decl] = val;
+      allocations[&decl] = variable;
     }
   }
   else{
