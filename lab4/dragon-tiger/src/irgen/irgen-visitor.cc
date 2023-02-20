@@ -106,14 +106,14 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
   llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
-  /*
+  
   if(ite.get_condition().get_type() == t_void){
       return nullptr;
   }
   // Check for errors
-  if (result->getType() != llvm_type(ite.get_type())) {
+  if (!llvm_type(ite.get_type())) {
     return nullptr;
-  }*/
+  }
   // Convert the condition to a boolean value
   llvm::Value *const condition = ite.get_condition().accept(*this);
   llvm::Value *const zero = Builder.getInt32(0);
