@@ -110,7 +110,7 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
 
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
-  
+  /*
   // Allocate memory for the result of the if-then-else statement
   llvm::Value *result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
   
@@ -152,7 +152,7 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
-  return Builder.CreateLoad(result);
+  return Builder.CreateLoad(result);*/
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
