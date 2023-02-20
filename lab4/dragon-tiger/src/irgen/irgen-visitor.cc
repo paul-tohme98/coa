@@ -177,20 +177,18 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
 
   llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
   llvm::Value *val;
+  val = var_decl.get().accept(*this);
 
-  if(llvm_type(decl.get_type())){
-    if(var_decl.has_value()){
-      //If it has a value, store it in the right memory
-      val = var_decl.get().accept(*this);
+  if((decl.get_type() != t_void) || (!val)){
       // Check if the expression has a void type, if it does return nullptr
       if ((decl.get_expr()->get_type() == t_void) || (!val)) {
         return nullptr;
       }  
       Builder.CreateStore(val, variable);
       allocations[&decl] = variable;
-    }
+    
   }
-  return nullptr;
+  return variable;
 }
 
 llvm::Value *IRGenerator::visit(const FunDecl &decl) {
