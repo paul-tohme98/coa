@@ -184,6 +184,10 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
     if(var_decl.has_value()){
       //If it has a value, store it in the right memory
       val = var_decl.get().accept(*this);
+      // Check if the expression has a void type, if it does return nullptr
+      if ((decl.get_expr()->get_type() == t_void) || (!val)) {
+        return nullptr;
+      }  
       Builder.CreateStore(val, variable);
       allocations[&decl] = variable;
     }
