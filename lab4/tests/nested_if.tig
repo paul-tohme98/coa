@@ -1,0 +1,1 @@
+let var a := 1 in if a<5 then if a<2 then print_int(a) else print("a > 2\n") else print("a > 5\n") end

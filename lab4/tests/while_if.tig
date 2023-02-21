@@ -1,0 +1,8 @@
+let var j:=10 
+in 
+while j > 0 do
+	if j > 5 then 
+		print_int(j) 
+	else print("no\n");
+	j=j+1 
+end

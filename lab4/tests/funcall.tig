@@ -1,0 +1,9 @@
+let
+var x := 15
+function getTemperature(temp : int) : int =
+	if temp < 5 then 
+		1
+	else 0
+in
+getTemperature(x)
+end

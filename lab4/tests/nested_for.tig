@@ -1,0 +1,8 @@
+let var j:=5 
+in 
+for i := 0 to j do (
+	for k :=0 to j do(
+	print_int(i); print("\n")
+	) 
+	)
+end

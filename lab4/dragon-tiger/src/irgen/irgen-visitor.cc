@@ -316,6 +316,7 @@ llvm::Value *IRGenerator::visit(const Assign &assign) {
   // UNIMPLEMENTED();
   // Create a basic block that is the entry block
   llvm::Value *rhs = assign.get_rhs().accept(*this);
+  // If the variable is of type not void (int/string), store its value in the right address
   if (assign.get_lhs().get_decl()->get_type() != t_void) {
     Builder.CreateStore(rhs, address_of(assign.get_lhs()));
   }

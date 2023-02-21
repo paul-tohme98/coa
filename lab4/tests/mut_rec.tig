@@ -1,0 +1,15 @@
+let
+    function is_even(n : int) : int =
+        if n = 0 then
+            1
+        else
+            is_odd(n - 1)
+    function is_odd(n : int) : int =
+        if n = 0 then
+            0
+        else
+            is_even(n - 1)
+in
+    print_int(is_even(10))
+end
+
