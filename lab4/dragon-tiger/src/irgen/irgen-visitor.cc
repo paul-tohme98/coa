@@ -164,7 +164,7 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
     else{
       Builder.CreateBr(end_block);
     }
-    return nullptr;
+    //return nullptr;
   }
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
