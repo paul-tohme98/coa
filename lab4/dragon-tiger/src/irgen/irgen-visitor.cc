@@ -102,7 +102,7 @@ llvm::Value *IRGenerator::visit(const Let &let) {
 llvm::Value *IRGenerator::visit(const Identifier &id) {
   //UNIMPLEMENTED();
   // loads value of the identifer allocated mem address
-  if(id.get_type() == t_void){
+  if(id.get_decl().get().get_type() == t_void){
     return nullptr;
   }
   llvm::Value *address = address_of(id);
@@ -137,19 +137,30 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
     llvm::Value *const condition = ite.get_condition().accept(*this);
     // If the condition is not null
     if(condition){
-      // Branch to either the then or else block depending on the condition
+      bool then_part_is_void;
+      if(ite.get_then_part().get_type() == t_void){
+        then_part_is_void = true;
+      }
+      else{
+        then_part_is_void = false;
+      }
+      // Check if the "then" part is void or not
+      if(!then_part_is_void){
+        // Allocate memory to store the result of the condition
+        result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
+      }
+
+      // Branch either to the then or to the else block depending on the condition
       Builder.CreateCondBr(
         Builder.CreateIsNotNull(condition),
         then_block,
         else_block
       );
-      // Allocate memory to store the result of the condition
-      result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
       // Populate the then block
       Builder.SetInsertPoint(then_block);
       // If we're in the then_block, use then_result as result
-      llvm::Value* const then_result = ite.get_then_part().accept(*this);
+      llvm::Value *then_result = ite.get_then_part().accept(*this);
       if(then_result){
         Builder.CreateStore(then_result, result);
         Builder.CreateBr(end_block);    
