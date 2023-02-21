@@ -315,9 +315,20 @@ llvm::Value *IRGenerator::visit(const ForLoop &loop) {
 llvm::Value *IRGenerator::visit(const Assign &assign) {
   // UNIMPLEMENTED();
   // Create a basic block that is the entry block
+  llvm::BasicBlock *const entry_block = llvm::BasicBlock::Create(Context, "entry", current_function);
+  Builder.SetInsertPoint(entry_block);
+  // Get the right part of the assignement
   llvm::Value *rhs = assign.get_rhs().accept(*this);
-  if (assign.get_lhs().get_decl()->get_type() != t_void) {
-    Builder.CreateStore(rhs, address_of(assign.get_lhs()));
+  // If the right part is void then return null
+  if(assign.get_rhs().get_type() == t_void){
+    return nullptr;
+  }
+  else{
+    // If the left part of assign is not void
+      if(assign.get_lhs().get_decl()->get_type() != t_void){
+        // Store the value (right part) of the assignement in the address of the assignement (address of the left part)
+        Builder.CreateStore(rhs, address_of(assign.get_lhs()));
+      }
   }
   return nullptr;
 }
