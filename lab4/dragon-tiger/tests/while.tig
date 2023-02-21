@@ -1,0 +1,2 @@
+let var j:=10 in while j > 0 do print_int(j); j=j+1 end
+

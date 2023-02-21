@@ -103,9 +103,7 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
     return nullptr;
   }
   llvm::Value *address = address_of(id);
-  // llvm::Type *int_type = Builder.getIntNTy(8 * sizeof(address));
-  // llvm::Value *int_val = Builder.CreatePtrToInt(address, int_type);
-  // llvm::Value *cmp = Builder.CreateICmpNE(int_val, Builder.getIntN(int_type->getIntegerBitWidth(), 0));
+  // Check if the identifier is stored somewhere in the memory, if yes then load it from memory
   if(address){
     return Builder.CreateLoad(address); ;
   }
@@ -121,21 +119,20 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   if (!llvm_type(ite.get_type())) {
     return nullptr;
   }
-  /*else if(ite.get_type() == t_void){
-    return nullptr;
-  }*/
   
   // Create the if-then-else basic blocks
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
   llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
 
+  // If the condition is a void, return null
   if(ite.get_condition().get_type() == t_void){
     return nullptr;
   }
   else{
-    // Convert the condition to a boolean value
+    // Get the condition
     llvm::Value *const condition = ite.get_condition().accept(*this);
+    // If the condition is not null
     if(condition){
       // Branch to either the then or else block depending on the condition
       Builder.CreateCondBr(
@@ -143,29 +140,31 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
         then_block,
         else_block
       );
+      // Allocate memory to store the result of the condition
       result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
       // Populate the then block
       Builder.SetInsertPoint(then_block);
+      // If we're in the then_block, use then_result as result
       llvm::Value* const then_result = ite.get_then_part().accept(*this);
       if(then_result){
         Builder.CreateStore(then_result, result);
         Builder.CreateBr(end_block);    
       }
-      else{
-        Builder.CreateBr(end_block);
-      }
       // Populate the else block
       Builder.SetInsertPoint(else_block);
+      // If we're in the else_block, use else_result as result
       llvm::Value* const else_result = ite.get_else_part().accept(*this);  
       if(else_result){
         Builder.CreateStore(else_result, result);    
         Builder.CreateBr(end_block);
-      }    
+      }   
+      // If neither then go to the end_block 
       else{
         Builder.CreateBr(end_block);
       }      
     }
+    // If the if condition is null then return null
     else{
       return nullptr;
     }
@@ -177,29 +176,42 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
-
-
+  // Vector to store variables' types in it
   std::vector<llvm::Type *> var_type;
+  // get the decl expression and store it in var_decl
   auto var_decl = decl.get_expr();
   
+  // If the expression is null (doesn't exist)
   if(!decl.get_expr()){
     return nullptr;
   }
-
+  // Allocate memory for the variable that we're declaring with the same type as the declaration's type
   llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
+  // val will contain the value of the variable declared, if it is declared with a value
   llvm::Value *val;
 
+  // if the declaration is an int or a string (not void)
   if(decl.get_type() != t_void){
+    // Add the type to the vector var_type
     var_type.push_back(llvm_type(var_decl->get_type()));
+    // Get the value of the declared variable
     val = var_decl.get().accept(*this);
-    if(val){
+    // If the value exists and is not void
+    if((llvm_type(var_decl.value().get_type())) && (var_decl.value().get_type() != t_void)){ // if(val)
       Builder.CreateStore(val, variable);
       allocations[&decl] = variable;      
     }
   }
+  // if it's void then push vod to var_type Vector
+  else if (decl.get_type() == t_void){
+    var_type.push_back(llvm_type(t_void));
+  }
+  // If not then it's an undefined type, we push t_undef to var_type and return null
   else{
     var_type.push_back(llvm_type(t_undef));
+    return nullptr;
   }
+  // Return the variable
   return variable;
 }
 
@@ -255,6 +267,7 @@ llvm::Value *IRGenerator::visit(const FunCall &call) {
 // While loop
 llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   //UNIMPLEMENTED();
+  // Create the basic blocks test, body and end of the loop
   llvm::BasicBlock *const test_block =
       llvm::BasicBlock::Create(Context, "loop_test", current_function);
 
@@ -264,14 +277,19 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   llvm::BasicBlock *const end_block =
       llvm::BasicBlock::Create(Context, "loop_end", current_function);
 
+  // Create an unconditional branch to test
   Builder.CreateBr(test_block);
   Builder.SetInsertPoint(test_block);
+  // Get the loop condition
   llvm::Value *condition = loop.get_condition().accept(*this);
+  // If the condition exists
   if(condition){
+    // Create a conditional branch (condition true => go to body else go to end)
     Builder.CreateCondBr(Builder.CreateIsNotNull(condition), body_block, end_block);
 
     Builder.SetInsertPoint(body_block);
     llvm::Value *body_val = loop.get_body().accept(*this);
+    // At the end of the body, create an unconditional branch to test
     Builder.CreateBr(test_block);
     Builder.SetInsertPoint(end_block);
     return nullptr;
@@ -312,16 +330,22 @@ llvm::Value *IRGenerator::visit(const ForLoop &loop) {
 
 llvm::Value *IRGenerator::visit(const Assign &assign) {
   // UNIMPLEMENTED();
+  // Create a basic block that is the entry block
   llvm::BasicBlock *const entry_block = llvm::BasicBlock::Create(Context, "entry", current_function);
   Builder.SetInsertPoint(entry_block);
+  // Get the right part of the assignement
   llvm::Value *rhs = assign.get_rhs().accept(*this);
+  // If the right part is void then return null
   if(assign.get_rhs().get_type() == t_void){
     return nullptr;
   }
   else{
+    // If the address of the assignement is present in memory then get the left part
     if(address_of(assign.get_lhs())){
       llvm::Value *lhs = assign.get_lhs().accept(*this);
+      // Store the value (right part) of the assignement in the address of the assignement (address of the left part)
       Builder.CreateStore(rhs, address_of(assign.get_lhs()));
+      // Return this address
       return address_of(assign.get_lhs());
     }
     else{

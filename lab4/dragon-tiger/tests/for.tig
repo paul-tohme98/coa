@@ -1,0 +1,1 @@
+let var j:=10 in for i := 0 to j do (print_int(i); print("\n")) end

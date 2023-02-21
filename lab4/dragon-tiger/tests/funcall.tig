@@ -1,0 +1,9 @@
+let 
+var thermostat := 17 
+function get_temperature() : int = 
+	thermostat
+function increment(delta : int) = 
+	thermostat := thermostat + delta
+in
+get_temperature()
+end
