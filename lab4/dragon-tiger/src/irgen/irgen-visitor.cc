@@ -169,6 +169,32 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
 
+
+std::vector<llvm::Type *> var_type;
+  auto var_decl = decl.get_expr();
+  
+  if(!decl.get_expr().is_initialized()){
+    return nullptr;
+  }
+
+  llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
+  llvm::Value *val;
+
+  if(llvm_type(decl.get_type())){
+    var_type.push_back(llvm_type(var_decl->get_type()));
+    if(var_decl.has_value()){
+      //If it has a value, store it in the right memory
+      val = var_decl.get().accept(*this);
+      Builder.CreateStore(val, variable);
+      allocations[&decl] = variable;
+    }
+  }
+  else{
+    var_type.push_back(llvm_type(t_undef));
+  }
+  return variable;
+
+/*
   auto var_decl = decl.get_expr();
   
   if(!var_decl){
@@ -183,7 +209,10 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
       Builder.CreateStore(val, variable);
       allocations[&decl] = variable;  
   }
-  return variable;
+  else{
+    return nullptr;
+  }
+  return variable;*/
 }
 
 llvm::Value *IRGenerator::visit(const FunDecl &decl) {
@@ -299,7 +328,6 @@ llvm::Value *IRGenerator::visit(const Assign &assign) {
   llvm::BasicBlock *const entry_block = llvm::BasicBlock::Create(Context, "entry", current_function);
   Builder.SetInsertPoint(entry_block);
   llvm::Value *rhs = assign.get_rhs().accept(*this);
-  //llvm::Value* const lhs = alloca_in_entry(llvm_type(assign.get_type()), "lhs");
   if(assign.get_rhs().get_type() == t_void){
     return nullptr;
   }
