@@ -128,41 +128,45 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
   llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
-  
-  // Convert the condition to a boolean value
-  llvm::Value *const condition = ite.get_condition().accept(*this);
 
-  if(!condition){
+  if(ite.get_condition().get_type() == t_void){
     return nullptr;
   }
   else{
-    // Branch to either the then or else block depending on the condition
-    Builder.CreateCondBr(
-      Builder.CreateIsNotNull(condition),
-      then_block,
-      else_block
-    );
-    result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
+    // Convert the condition to a boolean value
+    llvm::Value *const condition = ite.get_condition().accept(*this);
+    if(condition){
+      // Branch to either the then or else block depending on the condition
+      Builder.CreateCondBr(
+        Builder.CreateIsNotNull(condition),
+        then_block,
+        else_block
+      );
+      result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
 
-    // Populate the then block
-    Builder.SetInsertPoint(then_block);
-    llvm::Value* const then_result = ite.get_then_part().accept(*this);
-    if(then_result){
-      Builder.CreateStore(then_result, result);
-      Builder.CreateBr(end_block);    
+      // Populate the then block
+      Builder.SetInsertPoint(then_block);
+      llvm::Value* const then_result = ite.get_then_part().accept(*this);
+      if(then_result){
+        Builder.CreateStore(then_result, result);
+        Builder.CreateBr(end_block);    
+      }
+      else{
+        Builder.CreateBr(end_block);
+      }
+      // Populate the else block
+      Builder.SetInsertPoint(else_block);
+      llvm::Value* const else_result = ite.get_else_part().accept(*this);  
+      if(else_result){
+        Builder.CreateStore(else_result, result);    
+        Builder.CreateBr(end_block);
+      }    
+      else{
+        Builder.CreateBr(end_block);
+      }      
     }
     else{
-      Builder.CreateBr(end_block);
-    }
-    // Populate the else block
-    Builder.SetInsertPoint(else_block);
-    llvm::Value* const else_result = ite.get_else_part().accept(*this);  
-    if(else_result){
-      Builder.CreateStore(else_result, result);    
-      Builder.CreateBr(end_block);
-    }    
-    else{
-      Builder.CreateBr(end_block);
+      return nullptr;
     }
     // Block joining then and else parts
     Builder.SetInsertPoint(end_block);
