@@ -173,7 +173,7 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   std::vector<llvm::Type *> var_type;
   auto var_decl = decl.get_expr();
   
-  if(!decl.get_expr().is_initialized()){
+  if(!decl.get_expr()){
     return nullptr;
   }
 
