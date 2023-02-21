@@ -27,9 +27,10 @@ llvm::Value *IRGenerator::visit(const StringLiteral &literal) {
 }
 
 llvm::Value *IRGenerator::visit(const Break &b) {
-  UNIMPLEMENTED();
-  //llvm::BasicBlock *break_block = loop_exit_bbs[b.get_loop().get_ptr()];
-  //Builder.CreateBr(break_block);
+  //UNIMPLEMENTED();
+  //llvm::BasicBlock* break_block = llvm::BasicBlock::Create(Context, "br_block", current_function);
+  llvm::BasicBlock *break_block = loop_exit_bbs[b.get_loop().get_ptr()];
+  Builder.CreateBr(break_block);
   return nullptr;
 }
 
@@ -318,9 +319,14 @@ llvm::Value *IRGenerator::visit(const Assign &assign) {
     return nullptr;
   }
   else{
-    llvm::Value *lhs = assign.get_lhs().accept(*this);
-    Builder.CreateStore(rhs, address_of(assign.get_lhs()));
-    return address_of(assign.get_lhs());
+    if(address_of(assign.get_lhs())){
+      llvm::Value *lhs = assign.get_lhs().accept(*this);
+      Builder.CreateStore(rhs, address_of(assign.get_lhs()));
+      return address_of(assign.get_lhs());
+    }
+    else{
+      return nullptr;
+    }
   }
 }
 
