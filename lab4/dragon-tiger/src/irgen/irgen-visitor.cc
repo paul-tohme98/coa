@@ -170,40 +170,28 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
   //UNIMPLEMENTED();
+  // If the decl is void (no assigned value) accept it and return null
+  if (decl.get_type() == t_void) {
+    decl.get_expr()->accept(*this);
+    return nullptr;
+  }
   // Vector to store variables' types in it
   std::vector<llvm::Type *> var_type;
   // get the decl expression and store it in var_decl
   auto var_decl = decl.get_expr();
   
-  // If the expression is null (doesn't exist)
-  if(!decl.get_expr()){
-    return nullptr;
-  }
   // Allocate memory for the variable that we're declaring with the same type as the declaration's type
   llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
   // val will contain the value of the variable declared, if it is declared with a value
   llvm::Value *val;
-
-  // if the declaration is an int or a string (not void)
-  if(decl.get_type() != t_void){
-    // Add the type to the vector var_type
-    var_type.push_back(llvm_type(var_decl->get_type()));
-    // Get the value of the declared variable
-    val = var_decl.get().accept(*this);
-    // If the value exists and is not void
-    if((llvm_type(var_decl.value().get_type())) && (var_decl.value().get_type() != t_void)){ // if(val)
-      Builder.CreateStore(val, variable);
-      allocations[&decl] = variable;      
-    }
-  }
-  // if it's void then push vod to var_type Vector
-  else if (decl.get_type() == t_void){
-    var_type.push_back(llvm_type(t_void));
-  }
-  // If not then it's an undefined type, we push t_undef to var_type and return null
-  else{
-    var_type.push_back(llvm_type(t_undef));
+  // If the expression is null (doesn't exist)
+  if(!decl.get_expr()){
     return nullptr;
+  }
+  else{
+    val = var_decl->accept(*this);
+    Builder.CreateStore(val, variable);
+    allocations[&decl] = variable;   
   }
   // Return the variable
   return variable;
