@@ -175,22 +175,23 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
     decl.get_expr()->accept(*this);
     return nullptr;
   }
-  // Vector to store variables' types in it
-  std::vector<llvm::Type *> var_type;
-  // get the decl expression and store it in var_decl
+  // Get the decl expression and store it in var_decl
   auto var_decl = decl.get_expr();
   
   // Allocate memory for the variable that we're declaring with the same type as the declaration's type
   llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
   // val will contain the value of the variable declared, if it is declared with a value
   llvm::Value *val;
-  // If the expression is null (doesn't exist)
+  // If the expression is null (doesn't exist) return null
   if(!decl.get_expr()){
     return nullptr;
   }
   else{
+    // If the expression exists, accept the value and assign it to val
     val = var_decl->accept(*this);
+    // Store the value of val in variable
     Builder.CreateStore(val, variable);
+    // Add the couple decl, variable to the map allocations
     allocations[&decl] = variable;   
   }
   // Return the variable
@@ -259,15 +260,16 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
   llvm::BasicBlock *const end_block =
       llvm::BasicBlock::Create(Context, "loop_end", current_function);
 
+  // To handle break in loop
+  loop_exit_bbs[&loop] = end_block;
+
   // Create an unconditional branch to test
   Builder.CreateBr(test_block);
   Builder.SetInsertPoint(test_block);
   // Get the loop condition
   llvm::Value *condition = loop.get_condition().accept(*this);
-  // If the condition exists
-  if(condition){
     // Create a conditional branch (condition true => go to body else go to end)
-    Builder.CreateCondBr(Builder.CreateIsNotNull(condition), body_block, end_block);
+    Builder.CreateCondBr(Builder.CreateICmpNE(condition, Builder.getInt32(0)), body_block, end_block);
 
     Builder.SetInsertPoint(body_block);
     llvm::Value *body_val = loop.get_body().accept(*this);
@@ -275,10 +277,6 @@ llvm::Value *IRGenerator::visit(const WhileLoop &loop) {
     Builder.CreateBr(test_block);
     Builder.SetInsertPoint(end_block);
     return nullptr;
-  }
-  else{
-    return nullptr;
-  }
 }
 
 // For loop
@@ -294,6 +292,10 @@ llvm::Value *IRGenerator::visit(const ForLoop &loop) {
 
   llvm::Value *const index = loop.get_variable().accept(*this);
   llvm::Value *const high = loop.get_high().accept(*this);
+
+  // To handle break in loop
+  loop_exit_bbs[&loop] = end_block;
+
   Builder.CreateBr(test_block);
 
   Builder.SetInsertPoint(test_block);
@@ -322,18 +324,13 @@ llvm::Value *IRGenerator::visit(const Assign &assign) {
     return nullptr;
   }
   else{
-    // If the address of the assignement is present in memory then get the left part
-    if(address_of(assign.get_lhs())){
-      llvm::Value *lhs = assign.get_lhs().accept(*this);
-      // Store the value (right part) of the assignement in the address of the assignement (address of the left part)
-      Builder.CreateStore(rhs, address_of(assign.get_lhs()));
-      // Return this address
-      return address_of(assign.get_lhs());
-    }
-    else{
-      return nullptr;
-    }
+    // If the left part of assign is not void
+      if(assign.get_lhs().get_decl()->get_type() != t_void){
+        // Store the value (right part) of the assignement in the address of the assignement (address of the left part)
+        Builder.CreateStore(rhs, address_of(assign.get_lhs()));
+      }
   }
+  return nullptr;
 }
 
 } // namespace irgen
