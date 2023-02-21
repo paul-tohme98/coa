@@ -132,7 +132,7 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   // Convert the condition to a boolean value
   llvm::Value *const condition = ite.get_condition().accept(*this);
 
-  if(ite.get_condition().get_type() == t_void){
+  if(!condition){
     return nullptr;
   }
   else{
@@ -164,14 +164,10 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
     else{
       Builder.CreateBr(end_block);
     }
-    //return nullptr;
+    // Block joining then and else parts
+    Builder.SetInsertPoint(end_block);
+    return Builder.CreateLoad(result);
   }
-  // Block joining then and else parts
-  Builder.SetInsertPoint(end_block);
-  if(ite.get_condition().get_type() == t_void){
-      return nullptr;
-  }
-  return Builder.CreateLoad(result);
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
