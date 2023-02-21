@@ -145,19 +145,22 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   // Populate the then block
   Builder.SetInsertPoint(then_block);
   llvm::Value* const then_result = ite.get_then_part().accept(*this);
-  if(ite.get_condition().get_type() != t_void){
-    Builder.CreateStore(then_result, result);
+  if(ite.get_then_part().get_type() != t_void){
+    if(ite.get_condition().get_type() != t_void){
+      Builder.CreateStore(then_result, result);
+    }
+    Builder.CreateBr(end_block);    
   }
-  Builder.CreateBr(end_block);
 
   // Populate the else block
   Builder.SetInsertPoint(else_block);
   llvm::Value* const else_result = ite.get_else_part().accept(*this);
-  if(ite.get_condition().get_type() != t_void){
-    Builder.CreateStore(else_result, result);
+  if(ite.get_else_part().get_type() != t_void){
+    if(ite.get_condition().get_type() != t_void){
+      Builder.CreateStore(else_result, result);
+    }
+    Builder.CreateBr(end_block);
   }
-  Builder.CreateBr(end_block);
-
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
   if(ite.get_condition().get_type() == t_void){
@@ -182,35 +185,16 @@ llvm::Value *IRGenerator::visit(const VarDecl &decl) {
 
   if(decl.get_type() != t_void){
     var_type.push_back(llvm_type(var_decl->get_type()));
-    //If it has a value, store it in the right memory
     val = var_decl.get().accept(*this);
-    Builder.CreateStore(val, variable);
-    allocations[&decl] = variable;
+    if(val){
+      Builder.CreateStore(val, variable);
+      allocations[&decl] = variable;      
+    }
   }
   else{
     var_type.push_back(llvm_type(t_undef));
   }
   return variable;
-
-/*
-  auto var_decl = decl.get_expr();
-  
-  if(!var_decl){
-    return nullptr;
-  }
-
-  llvm::Value *variable = alloca_in_entry(llvm_type(decl.get_type()), decl.name);
-  llvm::Value *val;
-  val = var_decl.get().accept(*this);
-
-  if(decl.get_type() != t_void){
-      Builder.CreateStore(val, variable);
-      allocations[&decl] = variable;  
-  }
-  else{
-    return nullptr;
-  }
-  return variable;*/
 }
 
 llvm::Value *IRGenerator::visit(const FunDecl &decl) {
