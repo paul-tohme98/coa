@@ -118,74 +118,54 @@ llvm::Value *IRGenerator::visit(const Identifier &id) {
 llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
   //UNIMPLEMENTED();
   llvm::Value *result;
-  // Check for errors
-  if (!llvm_type(ite.get_type())) {
-    return nullptr;
-  }
-  
   // Create the if-then-else basic blocks
   llvm::BasicBlock* const then_block = llvm::BasicBlock::Create(Context, "if_then", current_function);
   llvm::BasicBlock* const else_block = llvm::BasicBlock::Create(Context, "if_else", current_function);
   llvm::BasicBlock* const end_block = llvm::BasicBlock::Create(Context, "if_end", current_function);
 
-  // If the condition is a void, return null
-  if(ite.get_condition().get_type() == t_void){
-    return nullptr;
+  // Get the condition
+  llvm::Value *const condition = ite.get_condition().accept(*this);
+  // If the condition is not null
+  bool then_part_is_void;
+  if(ite.get_then_part().get_type() == t_void){
+    then_part_is_void = true;
   }
   else{
-    // Get the condition
-    llvm::Value *const condition = ite.get_condition().accept(*this);
-    // If the condition is not null
-    if(condition){
-      bool then_part_is_void;
-      if(ite.get_then_part().get_type() == t_void){
-        then_part_is_void = true;
-      }
-      else{
-        then_part_is_void = false;
-      }
-      // Check if the "then" part is void or not
-      if(!then_part_is_void){
-        // Allocate memory to store the result of the condition
-        result = alloca_in_entry(llvm_type(ite.get_type()), "if_result");
-      }
+    then_part_is_void = false;
+  }
+  // Check if the "then" part is void or not
+  if(!then_part_is_void){
+    // Allocate memory to store the result of the condition
+    result = alloca_in_entry(llvm_type(t_int), "if_result");
+  }
+  
+  // Branch either to the then or to the else block depending on the condition
+  Builder.CreateCondBr(Builder.CreateICmpNE(condition, Builder.getInt32(0)), 
+    then_block,else_block);
 
-      // Branch either to the then or to the else block depending on the condition
-      Builder.CreateCondBr(
-        Builder.CreateIsNotNull(condition),
-        then_block,
-        else_block
-      );
-
-      // Populate the then block
-      Builder.SetInsertPoint(then_block);
-      // If we're in the then_block, use then_result as result
-      llvm::Value *then_result = ite.get_then_part().accept(*this);
-      if(then_result){
-        Builder.CreateStore(then_result, result);
-        Builder.CreateBr(end_block);    
-      }
-      // Populate the else block
-      Builder.SetInsertPoint(else_block);
-      // If we're in the else_block, use else_result as result
-      llvm::Value* const else_result = ite.get_else_part().accept(*this);  
-      if(else_result){
-        Builder.CreateStore(else_result, result);    
-        Builder.CreateBr(end_block);
-      }   
-      // If neither then go to the end_block 
-      else{
-        Builder.CreateBr(end_block);
-      }      
-    }
-    // If the if condition is null then return null
-    else{
-      return nullptr;
-    }
-    // Block joining then and else parts
-    Builder.SetInsertPoint(end_block);
+  // Populate the then block
+  Builder.SetInsertPoint(then_block);
+  // If we're in the then_block, use then_result as result
+  llvm::Value *then_result = ite.get_then_part().accept(*this);
+  if(!then_part_is_void){
+    // Store then_result in result
+    Builder.CreateStore(then_result, result);
+  }
+  Builder.CreateBr(end_block);    
+  // Populate the else block
+  Builder.SetInsertPoint(else_block);
+  // If we're in the else_block, use else_result as result
+  llvm::Value *else_result = ite.get_else_part().accept(*this);  
+  if(!then_part_is_void){
+    Builder.CreateStore(else_result, result);    
+  }   
+  Builder.CreateBr(end_block);   
+  // Block joining then and else parts
+  Builder.SetInsertPoint(end_block);
+  if(!then_part_is_void){
     return Builder.CreateLoad(result);
   }
+  return nullptr;  
 }
 
 llvm::Value *IRGenerator::visit(const VarDecl &decl) {
