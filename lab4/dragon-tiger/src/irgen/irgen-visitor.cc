@@ -148,7 +148,6 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
     Builder.SetInsertPoint(then_block);
     llvm::Value* const then_result = ite.get_then_part().accept(*this);
     if(then_result){
-      //llvm::Value* const then_result = ite.get_then_part().accept(*this);
       Builder.CreateStore(then_result, result);
       Builder.CreateBr(end_block);    
     }
@@ -159,13 +158,13 @@ llvm::Value *IRGenerator::visit(const IfThenElse &ite) {
     Builder.SetInsertPoint(else_block);
     llvm::Value* const else_result = ite.get_else_part().accept(*this);  
     if(else_result){
-      //llvm::Value* const else_result = ite.get_else_part().accept(*this);  
       Builder.CreateStore(else_result, result);    
       Builder.CreateBr(end_block);
     }    
     else{
       Builder.CreateBr(end_block);
     }
+    return result;
   }
   // Block joining then and else parts
   Builder.SetInsertPoint(end_block);
