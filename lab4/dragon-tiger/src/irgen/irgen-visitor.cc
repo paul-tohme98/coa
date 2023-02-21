@@ -28,9 +28,12 @@ llvm::Value *IRGenerator::visit(const StringLiteral &literal) {
 
 llvm::Value *IRGenerator::visit(const Break &b) {
   //UNIMPLEMENTED();
-  //llvm::BasicBlock* break_block = llvm::BasicBlock::Create(Context, "br_block", current_function);
-  llvm::BasicBlock *break_block = loop_exit_bbs[b.get_loop().get_ptr()];
+  // Create a block for the break
+  llvm::BasicBlock* break_block = llvm::BasicBlock::Create(Context, "br_block", current_function);
+  // Create an unconditional branch for the loop block, and branch to the break block
+  llvm::BasicBlock *br = loop_exit_bbs[&b.get_loop().get()];
   Builder.CreateBr(break_block);
+  Builder.SetInsertPoint(break_block);
   return nullptr;
 }
 
